@@ -1,0 +1,21 @@
+version: 1
+algorithm: blake3
+groups:
+  api-docs:
+    source:
+      src/lib.rs: f0268e3087d3d45a59349d66f155d2d0857134faea31b74d63bc0a00eade6f8e
+    dependents:
+      README.md: 3ad8f3cf042e8809b8b481f87c3286f43cb3c758c1cc29cd7a78c72cb3a18786
+      www/index.html: 9867fec274bc09803abbdd88c4b8fa13937863638feadea739edcd0022ad914c
+  dev-docs:
+    source:
+      Justfile: 60c33ca32527f6077af91cf9c6cd3605bf47cec2886cbe47b88f22404066ba41
+      flake.nix: a7796d1b64ab0e985d84ed7b32a28f69256a7988ebc6ce2d46924a81cc18ccc6
+    dependents:
+      AGENTS.md: 4c68433de009f82b5a8970f516fc8f79175e0b2a6c39d18f59df92b12e535f07
+      CONTRIBUTING.md: 469e8265a786182d7c4c3ce40ff2ddeb259fa9e0771650d90fabc741bca5412a
+  release-notes:
+    source:
+      Cargo.toml: a6476cea65a3283889f6f1adc53c58ee8c7b4fc76128e8bb3e1142e1d3c40b15
+    dependents:
+      CHANGELOG.md: e198cc9f1c65b8b6e9eb86d556df87773b9c2abd836c5ab46042a23dd4a5108f
