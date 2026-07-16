@@ -3,7 +3,7 @@ members = [] # Add sub-crate paths here as the project grows
 
 [package]
 name = "typst-harvest"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Labelled metadata-marker harvesting for Typst documents, on top of typst-world — a substrate for file-based tools that use Typst as a data medium"
@@ -18,7 +18,7 @@ name = "typst_harvest"
 path = "src/lib.rs"
 
 [dependencies]
-typst-world = "0.1.0"
+typst-world = "0.2.0"
 typst = "0.15"
 typst-eval = "0.15"
 typst-library = "0.15"
@@ -155,6 +155,3 @@ undocumented_unsafe_blocks = "deny"
 bool_to_int_with_if = "deny"
 manual_string_new = "deny"
 uninlined_format_args = "deny"
-
-[patch.crates-io]
-typst-world = { path = "../typst-world" }
