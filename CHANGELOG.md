@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `batch_harvest`: harvest many `.typ` files in parallel across cores via
+  `rayon`, behind the new default-on `batch` feature. The caller builds each
+  `World` (so it keeps roots, `@local` overrides, and can share one
+  `SourceSnapshot` across worlds so a common imported prelude is parsed
+  once); results preserve input order and isolate a per-item build/eval
+  failure to that item's slot rather than aborting the batch.
+
 ## [0.1.0]
 
 Initial extraction from the mindtape workspace (`crates/typst-harvest`).

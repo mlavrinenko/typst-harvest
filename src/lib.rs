@@ -17,11 +17,22 @@
 //! # Ok(())
 //! # }
 //! ```
+//!
+//! The `batch` feature (default-on) adds [`batch_harvest`]: evaluate many
+//! files in parallel across cores, optionally sharing a
+//! [`typst_world::SourceSnapshot`] so a common imported prelude is parsed
+//! once. See its docs for the full shape.
 
+#[cfg(feature = "batch")]
+mod batch;
 mod harvest;
 
+#[cfg(feature = "batch")]
+pub use batch::batch_harvest;
 pub use harvest::{Harvest, Location, Marker, harvest};
-pub use typst_world::{HVal, World as HarvestWorld, convert, find_project_root, format_date};
+pub use typst_world::{
+    HVal, SourceSnapshot, World as HarvestWorld, convert, find_project_root, format_date,
+};
 
 /// Errors raised while harvesting a Typst file.
 #[derive(Debug, thiserror::Error)]

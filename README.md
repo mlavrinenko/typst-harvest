@@ -31,6 +31,31 @@ Typst-free `HVal` tree. The `World` and value tree are re-exported from
 [`typst-world`](https://crates.io/crates/typst-world); this crate adds the
 harvesting step on top.
 
+### Batch harvesting
+
+The `batch` feature (default-on) adds `batch_harvest`: evaluate many files in
+parallel across cores via `rayon`. The caller builds each `World` (so it
+controls roots, `@local` overrides, and can share one `SourceSnapshot` across
+worlds so a common imported prelude is parsed once); `batch_harvest` harvests
+each on the worker thread that built it and returns results in input order,
+isolating a per-item failure to that item's slot.
+
+```rust,no_run
+use typst_harvest::{HarvestError, HarvestWorld, batch_harvest};
+
+# fn run() -> Result<(), HarvestError> {
+let files = vec![std::path::PathBuf::from("a.typ"), std::path::PathBuf::from("b.typ")];
+let results = batch_harvest(&files, |path| Ok(HarvestWorld::new(path)?));
+for result in results {
+    match result {
+        Ok(harvest) => println!("{} markers", harvest.markers.len()),
+        Err(err) => eprintln!("skipped: {err}"),
+    }
+}
+# Ok(())
+# }
+```
+
 ## Development
 
 Prerequisites: [Nix](https://nixos.org/) with flakes enabled.
