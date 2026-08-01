@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-01
+
+### Changed
+
+- Require `typst-world` 0.3.0. That release adds `render_with_targets`, and a
+  consumer that wants it alongside `harvest()` needs both crates resolving to
+  one `typst-world`: while this crate required `^0.2.0`, cargo pulled a second
+  copy and the two `World` types would not unify at the `harvest(&world)` call.
+  No API change here.
+
 ## [0.2.0] - 2026-07-16
 
 ### Added
