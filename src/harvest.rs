@@ -4,26 +4,13 @@ use std::ops::ControlFlow;
 use std::path::PathBuf;
 
 use comemo::Track;
+use typst::World as _;
 use typst::engine::{Route, Sink, Traced};
 use typst::foundations::{Content, Module};
-use typst::syntax::{Span, VirtualRoot};
-use typst::{World as _, WorldExt as _};
 use typst_library::introspection::MetadataElem;
-use typst_world::{HVal, World, convert, format_diagnostics};
+use typst_world::{HVal, Location, World, convert};
 
 use crate::HarvestError;
-
-/// Where a marker was emitted: a tree-relative (or package-qualified) path and a
-/// 1-based line number.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Location {
-    /// Source path. Tree-relative for a project file, or `{pkg-spec}/{vpath}`
-    /// for a file imported from an `@local/<name>:<version>` package, so the
-    /// identity is stable across consuming trees.
-    pub path: String,
-    /// 1-based line of the marker's emitting call.
-    pub line: usize,
-}
 
 /// One harvested `metadata()` payload, projected to an [`HVal`].
 #[derive(Debug, Clone, PartialEq)]
@@ -85,7 +72,7 @@ pub fn harvest(world: &World) -> Result<Harvest, HarvestError> {
         route.track(),
         &source,
     )
-    .map_err(|diags| HarvestError::Eval(format_diagnostics(&diags)))?;
+    .map_err(|diags| HarvestError::Eval(world.eval_error(&diags)))?;
 
     let content: Content = module.content();
     let mut markers = Vec::new();
@@ -105,28 +92,11 @@ fn collect_markers(world: &World, content: &Content, out: &mut Vec<Marker>) {
                 label: node
                     .label()
                     .map(|label| label.resolve().as_str().to_owned()),
-                location: span_to_location(node.span(), world),
+                location: world.locate(node.span()),
             });
         }
         ControlFlow::Continue(())
     });
-}
-
-/// Resolve a Typst [`Span`] to a [`Location`]: path plus 1-based line. Files
-/// imported from an `@local/<name>:<version>` package are qualified with the
-/// package spec so their identity is stable across consuming trees.
-fn span_to_location(span: Span, world: &World) -> Option<Location> {
-    let file_id = span.id()?;
-    let source = world.source(file_id).ok()?;
-    let range = world.range(span)?;
-    let line = source.lines().byte_to_line(range.start)? + 1;
-    let vpath = file_id.vpath().get_with_slash();
-    let vpath = vpath.strip_prefix('/').unwrap_or(vpath);
-    let path = match file_id.root() {
-        VirtualRoot::Package(spec) => format!("{spec}/{vpath}"),
-        VirtualRoot::Project => vpath.to_owned(),
-    };
-    Some(Location { path, line })
 }
 
 #[cfg(test)]

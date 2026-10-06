@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
-use super::super::{HVal, HarvestWorld, harvest};
+use super::super::{HVal, HarvestError, HarvestWorld, harvest};
 
 fn project(file_body: &str) -> (tempfile::TempDir, std::path::PathBuf) {
     let dir = tempfile::tempdir().unwrap();
@@ -61,6 +61,7 @@ fn captures_label_and_location() {
     let loc = marker.location.as_ref().unwrap();
     assert_eq!(loc.path, "task.typ");
     assert_eq!(loc.line, 2);
+    assert_eq!(loc.column, 2);
 }
 
 #[test]
@@ -116,4 +117,32 @@ fn source_override_backs_a_package_entry() {
 
     let result = harvest(&world).unwrap();
     assert_eq!(result.with_marker("demo.hit").count(), 1);
+}
+
+#[test]
+fn eval_error_names_the_line_in_the_main_file() {
+    let (_dir, file) = project("= Title\n\n#let tags = (\"a\" \"b\")\n");
+    let world = HarvestWorld::new(&file).unwrap();
+    let Err(HarvestError::Eval(err)) = harvest(&world) else {
+        panic!("expected an eval error");
+    };
+    assert_eq!(err.to_string(), "expected comma");
+    let at = err.main_location().unwrap();
+    assert_eq!((at.path.as_str(), at.line, at.column), ("task.typ", 3, 17));
+}
+
+#[test]
+fn eval_error_inside_an_import_names_the_main_files_line() {
+    let (dir, file) = project("#import \"doc.typ\": doc\n#show: doc.with(\n  titel: \"x\",\n)\n");
+    std::fs::write(
+        dir.path().join("doc.typ"),
+        "#let doc(title: none, body) = { assert(title != none); body }\n",
+    )
+    .unwrap();
+    let world = HarvestWorld::new(&file).unwrap();
+    let Err(HarvestError::Eval(err)) = harvest(&world) else {
+        panic!("expected an eval error");
+    };
+    assert_eq!(err.to_string(), "unexpected argument: titel");
+    assert_eq!(err.main_location().map(|at| at.line), Some(3));
 }

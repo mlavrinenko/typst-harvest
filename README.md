@@ -31,6 +31,28 @@ Typst-free `HVal` tree. The `World` and value tree are re-exported from
 [`typst-world`](https://crates.io/crates/typst-world); this crate adds the
 harvesting step on top.
 
+### Eval errors
+
+A file that fails to evaluate returns `HarvestError::Eval` with `typst-world`'s
+`EvalError`: every diagnostic with its message, location and trace.
+`main_location()` names the first point inside the harvested file, walking the
+trace when the error was raised in a file it imports:
+
+```rust,no_run
+use typst_harvest::{HarvestError, HarvestWorld, harvest};
+
+# fn run() -> Result<(), HarvestError> {
+let world = HarvestWorld::new(std::path::Path::new("task.typ"))?;
+if let Err(HarvestError::Eval(err)) = harvest(&world) {
+    match err.main_location() {
+        Some(at) => eprintln!("{}:{}:{}: {err}", at.path, at.line, at.column),
+        None => eprintln!("{err}"),
+    }
+}
+# Ok(())
+# }
+```
+
 ### Batch harvesting
 
 The `batch` feature (default-on) adds `batch_harvest`: evaluate many files in

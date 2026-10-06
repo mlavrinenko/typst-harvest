@@ -29,9 +29,10 @@ mod harvest;
 
 #[cfg(feature = "batch")]
 pub use batch::batch_harvest;
-pub use harvest::{Harvest, Location, Marker, harvest};
+pub use harvest::{Harvest, Marker, harvest};
 pub use typst_world::{
-    HVal, SourceSnapshot, World as HarvestWorld, convert, find_project_root, format_date,
+    Diagnostic, EvalError, HVal, Location, SourceSnapshot, World as HarvestWorld, convert,
+    find_project_root, format_date,
 };
 
 /// Errors raised while harvesting a Typst file.
@@ -41,9 +42,9 @@ pub enum HarvestError {
     #[error("file error: {0}")]
     File(String),
 
-    /// Typst evaluation produced diagnostics.
+    /// Typst evaluation produced diagnostics, resolved to source locations.
     #[error("eval error: {0}")]
-    Eval(String),
+    Eval(EvalError),
 
     /// The world could not be constructed or queried.
     #[error("{0}")]
@@ -54,7 +55,7 @@ impl From<typst_world::WorldError> for HarvestError {
     fn from(err: typst_world::WorldError) -> Self {
         match err {
             typst_world::WorldError::File(msg) => Self::File(msg),
-            typst_world::WorldError::Eval(msg) => Self::Eval(msg),
+            typst_world::WorldError::Eval(err) => Self::Eval(err),
             typst_world::WorldError::World(msg) => Self::World(msg),
         }
     }

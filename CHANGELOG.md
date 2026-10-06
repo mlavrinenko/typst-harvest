@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-07
+
+### Changed
+
+- **Breaking:** require `typst-world` 0.4.0. `HarvestError::Eval` carries its
+  `EvalError` instead of a pre-formatted string: every diagnostic with its
+  message, location and trace, and `main_location()` naming the first point
+  inside the harvested file, walking the trace when the error was raised in a
+  file it imports. Its `Display` is the old string.
+- **Breaking:** a marker's `Location` is `typst-world`'s, re-exported here,
+  and gains a 1-based `column`.
+
+### Added
+
+- Re-export `Diagnostic` and `EvalError` from `typst-world`.
+
 ## [0.3.0] - 2026-08-01
 
 ### Changed
