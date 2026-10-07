@@ -123,7 +123,7 @@ fn source_override_backs_a_package_entry() {
 fn eval_error_names_the_line_in_the_main_file() {
     let (_dir, file) = project("= Title\n\n#let tags = (\"a\" \"b\")\n");
     let world = HarvestWorld::new(&file).unwrap();
-    let Err(HarvestError::Eval(err)) = harvest(&world) else {
+    let Err(HarvestError::Eval { error: err, .. }) = harvest(&world) else {
         panic!("expected an eval error");
     };
     assert_eq!(err.to_string(), "expected comma");
@@ -140,7 +140,7 @@ fn eval_error_inside_an_import_names_the_main_files_line() {
     )
     .unwrap();
     let world = HarvestWorld::new(&file).unwrap();
-    let Err(HarvestError::Eval(err)) = harvest(&world) else {
+    let Err(HarvestError::Eval { error: err, .. }) = harvest(&world) else {
         panic!("expected an eval error");
     };
     assert_eq!(err.to_string(), "unexpected argument: titel");
@@ -155,7 +155,7 @@ fn eval_error_displays_typsts_message_and_keeps_its_hints() {
         panic!("expected an eval error");
     };
     assert_eq!(err.to_string(), "unknown variable: a-b");
-    let HarvestError::Eval(err) = err else {
+    let HarvestError::Eval { error: err, .. } = err else {
         panic!("expected an eval error");
     };
     let first = err.diagnostics.first().unwrap();
@@ -167,4 +167,50 @@ fn eval_error_displays_typsts_message_and_keeps_its_hints() {
             .any(|hint| hint.message.contains("subtraction")),
         "{hints:?}"
     );
+}
+
+/// A label at the top of a file attaches to nothing, so Typst warns about it
+/// while evaluating.
+const ORPHAN_LABEL: &str = "<orphan>\n";
+
+#[test]
+fn harvest_carries_typsts_warnings() {
+    let (_dir, file) = project(&format!("{ORPHAN_LABEL}#metadata(1) <m>\n"));
+    let world = HarvestWorld::new(&file).unwrap();
+    let result = harvest(&world).unwrap();
+
+    assert_eq!(result.with_label("m").count(), 1);
+    let warning = result.warnings.first().unwrap();
+    assert_eq!(warning.severity, Severity::Warning);
+    assert_eq!(
+        warning.message,
+        "label `<orphan>` is not attached to anything"
+    );
+    let at = warning.location.as_ref().unwrap();
+    assert_eq!((at.path.as_str(), at.line), ("task.typ", 1));
+}
+
+#[test]
+fn clean_harvest_has_no_warnings() {
+    let (_dir, file) = project("#metadata(1) <m>\n");
+    let world = HarvestWorld::new(&file).unwrap();
+    assert!(harvest(&world).unwrap().warnings.is_empty());
+}
+
+#[test]
+fn eval_error_keeps_the_warnings_raised_before_it() {
+    let (_dir, file) = project(&format!("{ORPHAN_LABEL}#undefined-name\n"));
+    let world = HarvestWorld::new(&file).unwrap();
+    let Err(HarvestError::Eval { error, warnings }) = harvest(&world) else {
+        panic!("expected an eval error");
+    };
+
+    assert!(
+        error
+            .diagnostics
+            .iter()
+            .all(|diag| diag.severity == Severity::Error)
+    );
+    assert_eq!(warnings.len(), 1);
+    assert_eq!(warnings.first().unwrap().severity, Severity::Warning);
 }

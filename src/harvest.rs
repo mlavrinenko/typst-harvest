@@ -8,7 +8,7 @@ use typst::World as _;
 use typst::engine::{Route, Sink, Traced};
 use typst::foundations::{Content, Module};
 use typst_library::introspection::MetadataElem;
-use typst_world::{HVal, Location, World, convert};
+use typst_world::{Diagnostic, HVal, Location, World, convert};
 
 use crate::HarvestError;
 
@@ -24,11 +24,14 @@ pub struct Marker {
     pub location: Option<Location>,
 }
 
-/// The result of harvesting a file: its markers and project-local dependencies.
+/// The result of harvesting a file: its markers, Typst's warnings and
+/// project-local dependencies.
 #[derive(Debug, Clone)]
 pub struct Harvest {
     /// Every `metadata()` marker found, in document order.
     pub markers: Vec<Marker>,
+    /// Warnings Typst raised while evaluating, in the order it raised them.
+    pub warnings: Vec<Diagnostic>,
     /// Project-local files read during evaluation (relative to root).
     pub dependencies: Vec<PathBuf>,
 }
@@ -50,10 +53,13 @@ impl Harvest {
     }
 }
 
-/// Evaluate `world`'s main file and harvest its metadata markers.
+/// Evaluate `world`'s main file and harvest its metadata markers and Typst's
+/// warnings.
 ///
 /// # Errors
 /// Returns an error if the source cannot be read or Typst evaluation fails.
+/// A failed evaluation's [`HarvestError::Eval`] keeps the warnings Typst
+/// raised before it stopped.
 pub fn harvest(world: &World) -> Result<Harvest, HarvestError> {
     let world_dyn: &dyn typst::World = world;
     let source = world
@@ -64,15 +70,28 @@ pub fn harvest(world: &World) -> Result<Harvest, HarvestError> {
     let traced = Traced::default();
     let route = Route::default();
 
-    let module: Module = typst_eval::eval(
+    let evaluated = typst_eval::eval(
         world_dyn.track(),
         world.library(),
         traced.track(),
         sink.track_mut(),
         route.track(),
         &source,
-    )
-    .map_err(|diags| HarvestError::Eval(world.eval_error(&diags)))?;
+    );
+    let warnings: Vec<Diagnostic> = sink
+        .warnings()
+        .iter()
+        .map(|diag| world.diagnostic(diag))
+        .collect();
+    let module: Module = match evaluated {
+        Ok(module) => module,
+        Err(diags) => {
+            return Err(HarvestError::Eval {
+                error: world.eval_error(&diags),
+                warnings,
+            });
+        }
+    };
 
     let content: Content = module.content();
     let mut markers = Vec::new();
@@ -80,6 +99,7 @@ pub fn harvest(world: &World) -> Result<Harvest, HarvestError> {
     let dependencies = world.dependencies()?;
     Ok(Harvest {
         markers,
+        warnings,
         dependencies,
     })
 }

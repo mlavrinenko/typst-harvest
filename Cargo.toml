@@ -3,7 +3,7 @@ members = [] # Add sub-crate paths here as the project grows
 
 [package]
 name = "typst-harvest"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Labelled metadata-marker harvesting for Typst documents, on top of typst-world — a substrate for file-based tools that use Typst as a data medium"

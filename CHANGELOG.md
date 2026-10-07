@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-07
+
+### Added
+
+- `Harvest::warnings` holds the warnings Typst raised while evaluating, each a
+  `Diagnostic` with `Severity::Warning`, its location, hints and trace.
+
+### Changed
+
+- **Breaking:** `HarvestError::Eval` is a struct variant,
+  `Eval { error: EvalError, warnings: Vec<Diagnostic> }`, so a failed file
+  keeps the warnings Typst raised before it stopped. Match
+  `HarvestError::Eval { error, .. }` where you matched `HarvestError::Eval(err)`.
+
 ## [0.5.0] - 2026-10-07
 
 ### Changed

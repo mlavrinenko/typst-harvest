@@ -2,7 +2,11 @@
 
 #show: task.with(
   title: "surface Typst warnings from harvest",
-  status: proposed(2026, 10, 7),
+  status: done(
+    2026,
+    10,
+    7,
+  )[Harvest::warnings and HarvestError::Eval { error, warnings } carry Typst's warnings. 0.6.0.],
 )
 
 == Summary

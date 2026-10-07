@@ -42,11 +42,16 @@ pub enum HarvestError {
     #[error("file error: {0}")]
     File(String),
 
-    /// Typst evaluation produced diagnostics, resolved to source locations.
-    /// Displays as Typst's message alone; render severity, hints and
-    /// locations from the [`EvalError`].
-    #[error("{0}")]
-    Eval(EvalError),
+    /// Typst evaluation failed. Displays as Typst's message alone; render
+    /// severity, hints and locations from the [`EvalError`].
+    #[error("{error}")]
+    Eval {
+        /// The errors that stopped evaluation, resolved to source locations.
+        error: EvalError,
+        /// Warnings Typst raised before it stopped, in the order it raised
+        /// them.
+        warnings: Vec<Diagnostic>,
+    },
 
     /// The world could not be constructed or queried.
     #[error("{0}")]
@@ -57,7 +62,10 @@ impl From<typst_world::WorldError> for HarvestError {
     fn from(err: typst_world::WorldError) -> Self {
         match err {
             typst_world::WorldError::File(msg) => Self::File(msg),
-            typst_world::WorldError::Eval(err) => Self::Eval(err),
+            typst_world::WorldError::Eval(error) => Self::Eval {
+                error,
+                warnings: Vec::new(),
+            },
             typst_world::WorldError::World(msg) => Self::World(msg),
         }
     }

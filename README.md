@@ -31,27 +31,37 @@ Typst-free `HVal` tree. The `World` and value tree are re-exported from
 [`typst-world`](https://crates.io/crates/typst-world); this crate adds the
 harvesting step on top.
 
-### Eval errors
+### Warnings and eval errors
 
-A file that fails to evaluate returns `HarvestError::Eval` with `typst-world`'s
-`EvalError`, which displays as Typst's message alone. Each `Diagnostic` carries
-its `Severity`, message, `Location`, Typst's `hints` and its trace.
-`main_location()` names the first point inside the harvested file, walking the
-trace when the error was raised in a file it imports:
+`Harvest::warnings` holds the warnings Typst raised while evaluating. A file
+that fails to evaluate returns `HarvestError::Eval { error, warnings }`:
+`error` is `typst-world`'s `EvalError`, which displays as Typst's message
+alone, and `warnings` holds the warnings raised before evaluation stopped.
+Each `Diagnostic` carries its `Severity`, message, `Location`, Typst's `hints`
+and its trace. `main_location()` names the first point inside the harvested
+file, walking the trace when the error was raised in a file it imports:
 
 ```rust,no_run
 use typst_harvest::{HarvestError, HarvestWorld, harvest};
 
 # fn run() -> Result<(), HarvestError> {
 let world = HarvestWorld::new(std::path::Path::new("task.typ"))?;
-if let Err(HarvestError::Eval(err)) = harvest(&world) {
-    match err.main_location() {
-        Some(at) => eprintln!("error: {at}: {err}"),
-        None => eprintln!("error: {err}"),
+let warnings = match harvest(&world) {
+    Ok(result) => result.warnings,
+    Err(HarvestError::Eval { error, warnings }) => {
+        match error.main_location() {
+            Some(at) => eprintln!("error: {at}: {error}"),
+            None => eprintln!("error: {error}"),
+        }
+        for hint in error.diagnostics.iter().flat_map(|diag| &diag.hints) {
+            eprintln!("hint: {hint}");
+        }
+        warnings
     }
-    for hint in err.diagnostics.iter().flat_map(|diag| &diag.hints) {
-        eprintln!("hint: {hint}");
-    }
+    Err(err) => return Err(err),
+};
+for warning in warnings {
+    eprintln!("warning: {warning}");
 }
 # Ok(())
 # }
