@@ -2,7 +2,11 @@
 
 #show: task.with(
   title: "carry Typst's hints in harvest errors",
-  status: proposed(2026, 10, 7),
+  status: done(
+    2026,
+    10,
+    7,
+  )[HarvestError::Eval displays Typst's message alone; Hint, Severity and TracePoint re-exported; requires typst-world 0.5.0. 0.5.0.],
 )
 
 == Summary

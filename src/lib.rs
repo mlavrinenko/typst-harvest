@@ -31,8 +31,8 @@ mod harvest;
 pub use batch::batch_harvest;
 pub use harvest::{Harvest, Marker, harvest};
 pub use typst_world::{
-    Diagnostic, EvalError, HVal, Location, SourceSnapshot, World as HarvestWorld, convert,
-    find_project_root, format_date,
+    Diagnostic, EvalError, HVal, Hint, Location, Severity, SourceSnapshot, TracePoint,
+    World as HarvestWorld, convert, find_project_root, format_date,
 };
 
 /// Errors raised while harvesting a Typst file.
@@ -43,7 +43,9 @@ pub enum HarvestError {
     File(String),
 
     /// Typst evaluation produced diagnostics, resolved to source locations.
-    #[error("eval error: {0}")]
+    /// Displays as Typst's message alone; render severity, hints and
+    /// locations from the [`EvalError`].
+    #[error("{0}")]
     Eval(EvalError),
 
     /// The world could not be constructed or queried.

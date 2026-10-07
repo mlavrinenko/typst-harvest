@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-07
+
+### Changed
+
+- **Breaking:** require `typst-world` 0.5.0. Each `Diagnostic` in an
+  `EvalError` gains its `severity` and Typst's `hints`, and its `trace` holds
+  `TracePoint`s, each Typst's description of the step plus its `Location`.
+- **Breaking:** `HarvestError::Eval` displays as Typst's message alone, without
+  the `eval error: ` prefix.
+
+### Added
+
+- Re-export `Hint`, `Severity` and `TracePoint` from `typst-world`.
+
 ## [0.4.0] - 2026-10-07
 
 ### Changed

@@ -34,7 +34,8 @@ harvesting step on top.
 ### Eval errors
 
 A file that fails to evaluate returns `HarvestError::Eval` with `typst-world`'s
-`EvalError`: every diagnostic with its message, location and trace.
+`EvalError`, which displays as Typst's message alone. Each `Diagnostic` carries
+its `Severity`, message, `Location`, Typst's `hints` and its trace.
 `main_location()` names the first point inside the harvested file, walking the
 trace when the error was raised in a file it imports:
 
@@ -45,8 +46,11 @@ use typst_harvest::{HarvestError, HarvestWorld, harvest};
 let world = HarvestWorld::new(std::path::Path::new("task.typ"))?;
 if let Err(HarvestError::Eval(err)) = harvest(&world) {
     match err.main_location() {
-        Some(at) => eprintln!("{}:{}:{}: {err}", at.path, at.line, at.column),
-        None => eprintln!("{err}"),
+        Some(at) => eprintln!("error: {at}: {err}"),
+        None => eprintln!("error: {err}"),
+    }
+    for hint in err.diagnostics.iter().flat_map(|diag| &diag.hints) {
+        eprintln!("hint: {hint}");
     }
 }
 # Ok(())

@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
-use super::super::{HVal, HarvestError, HarvestWorld, harvest};
+use super::super::{HVal, HarvestError, HarvestWorld, Hint, Severity, harvest};
 
 fn project(file_body: &str) -> (tempfile::TempDir, std::path::PathBuf) {
     let dir = tempfile::tempdir().unwrap();
@@ -145,4 +145,26 @@ fn eval_error_inside_an_import_names_the_main_files_line() {
     };
     assert_eq!(err.to_string(), "unexpected argument: titel");
     assert_eq!(err.main_location().map(|at| at.line), Some(3));
+}
+
+#[test]
+fn eval_error_displays_typsts_message_and_keeps_its_hints() {
+    let (_dir, file) = project("#let a = 1\n#a-b\n");
+    let world = HarvestWorld::new(&file).unwrap();
+    let Err(err) = harvest(&world) else {
+        panic!("expected an eval error");
+    };
+    assert_eq!(err.to_string(), "unknown variable: a-b");
+    let HarvestError::Eval(err) = err else {
+        panic!("expected an eval error");
+    };
+    let first = err.diagnostics.first().unwrap();
+    assert_eq!(first.severity, Severity::Error);
+    let hints: Vec<&Hint> = first.hints.iter().collect();
+    assert!(
+        hints
+            .iter()
+            .any(|hint| hint.message.contains("subtraction")),
+        "{hints:?}"
+    );
 }
